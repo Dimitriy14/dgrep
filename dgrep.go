@@ -86,8 +86,14 @@ func parseFile(path string, contextLines int) {
 		if re.FindString(line) != "" {
 			var context []string
 
-			for j := 0; j < contextLines; j++ {
-				context = append(context, lines[i+j])
+			if i > len(lines)-contextLines {
+				for j := -contextLines; j < 0; j++ {
+					context = append(context, lines[i+j])
+				}
+			} else {
+				for j := 0; j < contextLines; j++ {
+					context = append(context, lines[i+j])
+				}
 			}
 
 			matches = append(matches, matche{i + 1, strings.Join(context, "\n")})
