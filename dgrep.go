@@ -15,7 +15,7 @@ import (
 var wg sync.WaitGroup
 var regx string
 
-type matche struct {
+type match struct {
 	lineNumber int
 	strs       string
 }
@@ -36,10 +36,6 @@ func main() {
 	flag.Parse()
 
 	root := os.Args[len(os.Args)-1]
-
-	if root == "" {
-		root = "."
-	}
 
 	if *ignoreCase {
 		regx = "(?i)" + os.Args[len(os.Args)-2]
@@ -78,7 +74,7 @@ func parseFile(path string, contextLines int) {
 
 	re := regexp.MustCompile(regx)
 
-	var matches []matche
+	var matches []match
 
 	lines := strings.Split(string(dat), "\n")
 
@@ -86,8 +82,11 @@ func parseFile(path string, contextLines int) {
 		if re.FindString(line) != "" {
 			var context []string
 
-			if i > len(lines)-contextLines {
-				for j := -contextLines; j < 0; j++ {
+			if len(lines) < contextLines {
+				context = append(context, line)
+
+			} else if i > len(lines)-contextLines {
+				for j := -contextLines + 1; j <= 0; j++ {
 					context = append(context, lines[i+j])
 				}
 			} else {
@@ -96,7 +95,7 @@ func parseFile(path string, contextLines int) {
 				}
 			}
 
-			matches = append(matches, matche{i + 1, strings.Join(context, "\n")})
+			matches = append(matches, match{i + 1, strings.Join(context, "\n")})
 		}
 	}
 
