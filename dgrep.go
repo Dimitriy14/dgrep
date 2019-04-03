@@ -52,7 +52,7 @@ func main() {
 			if filepath.Ext(info.Name()) == "."+*pattern {
 				wg.Add(1)
 
-				go parseFile(path, *contextLines)
+				go parseWithIndex(path, *contextLines)
 			}
 		}
 		return nil
@@ -104,6 +104,45 @@ func parseFile(path string, contextLines int) {
 		for _, m := range matches {
 			fmt.Printf("Match on line %v:\n%v\n", m.lineNumber, m.strs)
 		}
+	}
+
+	wg.Done()
+}
+
+type Match struct {
+	lines string
+	index []int
+}
+
+func parseWithIndex(path string, contextLines int) {
+	myregexp := ".*" + regx
+
+	for i := 0; i < contextLines; i++ {
+		myregexp += ".*\n?"
+	}
+
+	dat, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	re := regexp.MustCompile(myregexp)
+
+	res := re.FindAllString(string(dat), -1)
+
+	indexes := re.FindAllStringIndex(string(dat), -1)
+
+	var matches []Match
+
+	for i, r := range res {
+		matches = append(matches, Match{r, indexes[i]})
+	}
+
+	fmt.Println(path + " : ")
+
+	for _, m := range matches {
+		fmt.Println("lines: ", m.lines, "index:", m.index)
 	}
 
 	wg.Done()
