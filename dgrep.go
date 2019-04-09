@@ -1,38 +1,36 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"sync"
 )
 
-var wg sync.WaitGroup
-var regx string
+var (
+	regx         string
+	contextLines = flag.Int("c", 3, "number of context lines")
+	ignoreCase   = flag.Bool("i", false, "ignore case")
+	pattern      = flag.String("type", "go", "file extension")
 
-type match struct {
-	lineNumber int
-	strs       string
+	wg sync.WaitGroup
+)
+
+type jobRequest struct {
+	path string
+	info os.FileInfo
+}
+
+type Results struct {
+	path  string
+	lines string
 }
 
 func main() {
-	if len(os.Args) < 3 {
-		fmt.Println("Not enough arguments")
-		fmt.Println("Want main.go [options] [string] [root path]")
-		return
-	}
-
-	contextLines := flag.Int("ctx", 3, "an int")
-
-	ignoreCase := flag.Bool("case", false, "a bool")
-
-	pattern := flag.String("p", "go", "-p=go")
-
 	flag.Parse()
 
 	root := os.Args[len(os.Args)-1]
@@ -43,6 +41,15 @@ func main() {
 		regx = "(?-i)" + os.Args[len(os.Args)-2]
 	}
 
+	reqch := make(chan jobRequest)
+	done := make(chan struct{})
+
+	numberOfJob := 3
+
+	for i := 0; i < numberOfJob; i++ {
+		go parseFile(i, reqch, done)
+	}
+
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -50,9 +57,7 @@ func main() {
 
 		if info.Mode().IsRegular() {
 			if filepath.Ext(info.Name()) == "."+*pattern {
-				wg.Add(1)
-
-				go parseWithIndex(path, *contextLines)
+				reqch <- jobRequest{path, info}
 			}
 		}
 		return nil
@@ -62,88 +67,64 @@ func main() {
 		log.Println(err)
 	}
 
-	wg.Wait()
-}
-
-func parseFile(path string, contextLines int) {
-	dat, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		log.Fatal(err)
+	for i := 0; i < numberOfJob; i++ {
+		done <- struct{}{}
 	}
 
-	re := regexp.MustCompile(regx)
+}
 
-	var matches []match
+func parseFile(id int, request chan jobRequest, done chan struct{}) {
+	for {
+		select {
+		case <-done:
+			fmt.Printf("Routine №:%d is finished\n", id)
+			return
+		case req := <-request:
+			file, err := os.Open(req.path)
 
-	lines := strings.Split(string(dat), "\n")
+			if err != nil {
+				log.Println("file opening err:", err)
+				return
+			}
 
-	for i, line := range lines {
-		if re.FindString(line) != "" {
-			var context []string
+			fileScanner := bufio.NewScanner(file)
 
-			if len(lines) < contextLines {
-				context = append(context, line)
+			re := regexp.MustCompile(regx)
 
-			} else if i > len(lines)-contextLines {
-				for j := -contextLines + 1; j <= 0; j++ {
-					context = append(context, lines[i+j])
+			var lineNumber int
+			var context string
+			var contextLineCounter int
+			var mathedLines string
+
+			fileScanner.Scan()
+
+			for {
+				lineNumber++
+				contextLineCounter++
+
+				context += fmt.Sprintf("%d: %s\n", lineNumber, fileScanner.Text())
+
+				if contextLineCounter == *contextLines {
+					if re.FindString(context) != "" {
+						mathedLines += context
+					}
+
+					context = "\n"
+					contextLineCounter = 0
 				}
-			} else {
-				for j := 0; j < contextLines; j++ {
-					context = append(context, lines[i+j])
+
+				if !fileScanner.Scan() {
+					if re.FindString(context) != "" {
+						mathedLines += context
+					}
+
+					break
 				}
 			}
 
-			matches = append(matches, match{i + 1, strings.Join(context, "\n")})
+			if mathedLines != "" {
+				fmt.Printf("\n%s: \t%s", req.path, mathedLines)
+			}
 		}
 	}
-
-	if matches != nil {
-		fmt.Println(path + " : ")
-		for _, m := range matches {
-			fmt.Printf("Match on line %v:\n%v\n", m.lineNumber, m.strs)
-		}
-	}
-
-	wg.Done()
-}
-
-type Match struct {
-	lines string
-	index []int
-}
-
-func parseWithIndex(path string, contextLines int) {
-	myregexp := ".*" + regx
-
-	for i := 0; i < contextLines; i++ {
-		myregexp += ".*\n?"
-	}
-
-	dat, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	re := regexp.MustCompile(myregexp)
-
-	res := re.FindAllString(string(dat), -1)
-
-	indexes := re.FindAllStringIndex(string(dat), -1)
-
-	var matches []Match
-
-	for i, r := range res {
-		matches = append(matches, Match{r, indexes[i]})
-	}
-
-	fmt.Println(path + " : ")
-
-	for _, m := range matches {
-		fmt.Println("lines: ", m.lines, "index:", m.index)
-	}
-
-	wg.Done()
 }
