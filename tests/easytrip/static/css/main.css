@@ -1,0 +1,136 @@
+
+html, body{
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  background: linear-gradient(to right, #242424, #27045F) no-repeat;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+ }
+ 
+
+
+.mycontainer{
+  border: 5px solid #ccc; 
+  border-radius: 10px;
+  align-items: center;
+  width: 340px;
+  color: #ccc;
+  text-align: center;
+  margin: 0 auto;
+}
+
+
+
+.form-window{
+	width: 320px;
+  padding: 10px;
+  display: flex;
+  margin: 5px;
+  color: #ccc;
+}
+
+.block-container{
+  text-align: center;
+  display: flex;
+  color: #ccc;
+}
+
+
+.stathead{
+  text-align: center;
+  color: #ccc;
+}
+
+.warning {
+  color: red;
+  font-size: 18px;
+}
+
+.button {
+  width: 150px;
+  display: inline-block;
+  padding: 15px 25px;
+  font-size: 18px;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  color: #fff;
+  background-color: #56416E;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 3px #ccc;
+}
+
+.back {
+	width: 150px;
+	display: inline-block;
+	padding: 15px 25px;
+	font-size: 18px;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	outline: none;
+	color: #fff;
+	background-color: #56416E;
+	border: none;
+	border-radius: 15px;
+	box-shadow: 0 3px #ccc;
+  }
+
+.button:hover {
+	background-color: #B1A8B9;
+}
+
+.button:active {
+  background-color: #B1A8B9;
+  box-shadow: 0 1px #ccc;
+  transform: translateY(4px);
+}
+
+.warning{
+  color: red
+}
+
+.back {
+	width: 150px;
+	display: inline-block;
+	padding: 15px 25px;
+	font-size: 18px;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	outline: none;
+	color: #fff;
+	background-color: #56416E;
+	border: none;
+	border-radius: 15px;
+	box-shadow: 0 3px #ccc;
+  }
+  
+  .back:hover {
+	  background-color: #B1A8B9;
+  }
+  
+  .back:active {
+	background-color: #B1A8B9;
+	box-shadow: 0 1px #ccc;
+	transform: translateY(4px);
+  }
+
+.button-center{
+  text-align: center;
+  width: 300px;
+}
+.button-select{
+  text-align: center;
+  width: 200px;
+}
+  
+
+li{
+	list-style: none;
+	padding: 0;
+}
+

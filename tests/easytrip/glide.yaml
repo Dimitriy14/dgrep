@@ -1,0 +1,13 @@
+package: github.com/oreuta/easytrip
+import:
+- package: github.com/astaxie/beego
+  version: v1.11.0
+  subpackages:
+  - toolbox
+- package: github.com/go-sql-driver/mysql
+  version: v1.4.1
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: 1.6.3
+  subpackages:
+  - convey
