@@ -15,7 +15,7 @@ var (
 	regx         string
 	contextLines = flag.Int("c", 3, "number of context lines")
 	ignoreCase   = flag.Bool("i", false, "ignore case")
-	pattern      = flag.String("type", "go", "file extension")
+	pattern      = flag.String("type", "", "file extension")
 )
 
 //Results is a result of parsing
@@ -42,8 +42,9 @@ func main() {
 	}
 
 	for _, r := range results {
-
-		fmt.Printf("%s:\n%s", r.path, r.lines)
+		if r.lines != "" {
+			fmt.Printf("\n%s: %s", r.path, r.lines)
+		}
 	}
 }
 
@@ -57,7 +58,7 @@ func worker(root string) ([]Results, error) {
 
 	var wg sync.WaitGroup
 
-	numGoroutine := 5
+	numGoroutine := 20
 
 	wg.Add(numGoroutine)
 
@@ -99,7 +100,7 @@ func walkFiles(done chan struct{}, root string) (chan string, chan error) {
 			}
 
 			if info.Mode().IsRegular() {
-				if filepath.Ext(info.Name()) == "."+*pattern {
+				if filepath.Ext(info.Name()) == "."+*pattern || *pattern == "" {
 					select {
 					case paths <- path:
 					case <-done:
@@ -123,8 +124,6 @@ func parseFile(paths chan string, res chan Results, done chan struct{}) {
 			log.Println("file opening err:", err)
 			return
 		}
-
-		defer file.Close()
 
 		fileScanner := bufio.NewScanner(file)
 
@@ -156,7 +155,6 @@ func parseFile(paths chan string, res chan Results, done chan struct{}) {
 				if re.FindString(context) != "" {
 					mathedLines += context
 				}
-
 				break
 			}
 		}
@@ -164,6 +162,7 @@ func parseFile(paths chan string, res chan Results, done chan struct{}) {
 		select {
 		case res <- Results{path, mathedLines}:
 		case <-done:
+			file.Close()
 			return
 		}
 	}
